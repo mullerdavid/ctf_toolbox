@@ -45,7 +45,7 @@ services:
     #ports:
     #   - "8005:8005"
     volumes:
-      - ${TRAFFIC_DIR_HOST}/arkime:${TRAFFIC_DIR_DOCKER}
+      - ${TRAFFIC_DIR_HOST}/arkime:/data
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
     networks:
       internal:
@@ -54,7 +54,7 @@ services:
       context: suricata
       dockerfile: Dockerfile-suricata
     volumes:
-      - ${TRAFFIC_DIR_HOST}/suricata:${TRAFFIC_DIR_DOCKER}
+      - ${TRAFFIC_DIR_HOST}/suricata:/data
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve
     cap_add:
       - SYS_NICE
@@ -65,7 +65,7 @@ services:
     environment:
       - TRAFFIC_DIR_DOCKER=false
     volumes:
-      - ${TRAFFIC_DIR_HOST}:${TRAFFIC_DIR_DOCKER} # all data
+      - ${TRAFFIC_DIR_HOST}:/data # all data
   evebox:
     image: jasonish/evebox
     healthcheck:
@@ -90,6 +90,13 @@ services:
       internal:
   haproxy:
     image: haproxy
+    depends_on:
+      evebox:
+        condition: service_started
+      arkime:
+        condition: service_started
+      frontend:
+        condition: service_started
     ports:
       - "80:80"
     volumes:
@@ -106,3 +113,5 @@ services:
 
 # docker exec ctf_toolbox-pcapmover-1 bash -c 'touch /data/*.pcap'
 # docker compose up --build -d --force-recreate
+
+# TODO: restarts

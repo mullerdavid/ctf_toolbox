@@ -15,7 +15,7 @@ services:
         interval: 60s
         timeout: 30s
         retries: 3
-    ##ports: !reset []
+    ports: !reset []
     volumes:
       - ${TRAFFIC_DIR_HOST}/arkime:${TRAFFIC_DIR_DOCKER}:ro
   assembler:
