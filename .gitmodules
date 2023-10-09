@@ -1,0 +1,3 @@
+[submodule "tulip"]
+	path = tulip
+	url = https://github.com/OpenAttackDefenseTools/tulip.git
