@@ -4,8 +4,7 @@ FROM jasonish/suricata
 COPY start-suricata.sh /start-suricata.sh
 
 # Install Arkime
-RUN mkdir -p /data && \
-    wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$(dpkg --print-architecture) -O /opt/bin/yq && \
+RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$(dpkg --print-architecture) -O /opt/bin/yq && \
     chmod +x /opt/bin/yq && \
     /opt/bin/yq -i 'del(.af-packet) | .default-rule-path = "/var/lib/suricata/rules/"' /etc/suricata/suricata.yaml
     suricata-update update-sources && \
@@ -15,6 +14,8 @@ RUN mkdir -p /data && \
     suricata-update enable-source malsilo/win-malware && \
     suricata-update enable-source stamus/lateral && \
     suricata-update
+    chmod 755 /start-arkimeviewer.sh && \
+    mkdir -p /data && \
 
 VOLUME ["/data"]
 

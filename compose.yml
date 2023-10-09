@@ -19,7 +19,8 @@ services:
       context: arkime
       dockerfile: Dockerfile-arkime
     ports:
-      - "127.0.0.1:8005:8005"
+      - "8005:8005"
+      # TODO: backup, move behind reverse proxy
     healthcheck:
         test: ["CMD-SHELL", "[[ $(curl --silent localhost:8005) == 'Unauthorized' ]] || exit 1"]
         start_period: 120s
@@ -34,6 +35,10 @@ services:
       - ${TRAFFIC_DIR_HOST}/suricata/eve.json:/eve/eve.json:ro
     networks:
       internal:
+  suricata:
+    build:
+      context: suricata
+      dockerfile: Dockerfile-arkime
 
 networks:
   internal:
