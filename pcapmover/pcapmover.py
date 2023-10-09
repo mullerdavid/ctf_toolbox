@@ -26,7 +26,8 @@ def create_background_task(coro):
 async def add_suricata_task(path: Path):
     create_background_task(arkime_delayed(path))
     suricata_path = Path(suricata_dir, path.name)
-    if not suricata_path.exists():
+    arkime_path = Path(arkime_dir, path.name)
+    if not suricata_path.exists() and not arkime_path.exists():
         logging.info(f"Adding {path.as_posix()} to Suricata.")
         suricata_path.hardlink_to(path)
 
@@ -35,6 +36,8 @@ async def add_arkime_task(path: Path):
     if not arkime_path.exists():
         logging.info(f"Adding {path.as_posix()} to Arkime.")
         arkime_path.hardlink_to(path)
+        with path.open('ab'):
+            pass
 
 async def arkime_delayed(path: Path):
     await asyncio.sleep(60)

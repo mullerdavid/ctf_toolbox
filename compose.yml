@@ -24,11 +24,8 @@ services:
     build:
       context: arkime
       dockerfile: Dockerfile-arkime
-    ports:
-      - "8005:8005"
-      # TODO: backup, move behind reverse proxy
     healthcheck:
-        test: ["CMD-SHELL", "[[ $(curl --silent localhost:8005) == 'Unauthorized' ]] || exit 1"]
+        test: ["CMD-SHELL", "[ $(curl --silent localhost:8005) = 'Unauthorized' ] || exit 1"]
         start_period: 120s
         interval: 60s
         timeout: 30s
@@ -36,8 +33,11 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    ports:
+      - "8005:8005"
+      # TODO: backup, move behind reverse proxy
     volumes:
-      - ${TRAFFIC_DIR_HOST}/arkime:/data:ro
+      - ${TRAFFIC_DIR_HOST}/arkime:/data
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
     networks:
       internal:
@@ -58,6 +58,15 @@ services:
       - ${TRAFFIC_DIR_HOST}:/data # all data
   evebox:
     image: jasonish/evebox
+    healthcheck:
+        test: ["CMD-SHELL", "curl --silent --fail localhost:5636 || exit 1"]
+        start_period: 120s
+        interval: 60s
+        timeout: 30s
+        retries: 3
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     environment:
       - EVEBOX_HTTP_TLS_ENABLED=false
       - EVEBOX_AUTHENTICATION_REQUIRED=false
