@@ -12,6 +12,7 @@ include:
 volumes:
   elastic-data: #for ES data persistency
   evebox-data: #for EveBox data persistency
+  certgen-data: #for SSL cert persistency
 
 services:
   elasticsearch:
@@ -93,6 +94,12 @@ services:
       - ${EVEBOX_DATAPATH:-evebox-data}:/state
     networks:
       internal:
+  certgen:
+    image: alpine/openssl
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "cd /ssl; [ -f /ssl/ssl.pem ] && echo Cert already generated || (echo Generating new cert; openssl req -newkey rsa:2048 -nodes -x509 -days 3650 -keyout ssl.key -out ssl.crt -subj '/CN=Deathbaron' && cat ssl.crt ssl.key >> ssl.pem)"]
+    volumes:
+      - certgen-data:/ssl
   haproxy:
     image: haproxy
     restart: unless-stopped
@@ -103,10 +110,13 @@ services:
         condition: service_started
       frontend:
         condition: service_started
+      certgen:
+        condition: service_completed_successfully
     ports:
       - "80:80"
     volumes:
       - ./haproxy:/usr/local/etc/haproxy:ro
+      - certgen-data:/ssl
     networks:
       internal:
     
@@ -121,4 +131,4 @@ services:
 # docker compose up --build -d --force-recreate
 
 # TODO: suricata disable signatures test
-# TODO: restarts
+# TODO: https
