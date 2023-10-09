@@ -1,5 +1,9 @@
 version: '3.4'
 
+volumes:
+  elastic-data: #for ES data persistency
+  evebox-data: #for EveBox data persistency
+
 services:
   elasticsearch:
     image: elasticsearch:8.10.2
@@ -7,6 +11,8 @@ services:
       - elasticsearch/elasticsearch.env
     environment:
       - "ES_JAVA_OPTS=-Xms${ELASTIC_MEMORY:-4G} -Xmx${ELASTIC_MEMORY:-4G}"
+    volumes:
+      - ${ELASTIC_DATAPATH:-elastic-data}:/usr/share/elasticsearch/data
     healthcheck:
         test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
         interval: 30s
@@ -40,14 +46,16 @@ services:
       context: suricata
       dockerfile: Dockerfile-suricata
     volumes:
-      - ${TRAFFIC_DIR_HOST}/suricata:/data:rw
-      - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:rw
+      - ${TRAFFIC_DIR_HOST}/suricata:/data
+      - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve
+    cap_add:
+      - SYS_NICE
   pcapmover:
     build:
       context: pcapmover
       dockerfile: Dockerfile-pcapmover
     volumes:
-      - ${TRAFFIC_DIR_HOST}:/data:rw
+      - ${TRAFFIC_DIR_HOST}:/data # all data
   evebox:
     image: jasonish/evebox
     environment:
@@ -59,7 +67,7 @@ services:
       # TODO: backup, move behind reverse proxy
     volumes:
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
-      - ${TRAFFIC_DIR_HOST}/evebox:/state:rw
+      - ${EVEBOX_DATAPATH:-evebox-data}:/state
     networks:
       internal:
 

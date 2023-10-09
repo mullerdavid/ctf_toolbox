@@ -1,10 +1,12 @@
-FROM jasonish/suricata
+FROM ubuntu:22.04
 
 # Add new entrypoint
 COPY start-suricata.sh /start-suricata.sh
 
-# Install Arkime
-RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 --output /opt/yq && \
+# Install Suricata
+RUN apt-get update && \
+    apt-get install -y suricata && \
+    wget -q -O /opt/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" && \
     chmod +x /opt/yq && \
     /opt/yq -i 'del(.af-packet) | .default-rule-path = "/var/lib/suricata/rules/"' /etc/suricata/suricata.yaml && \
     suricata-update update-sources && \
@@ -13,7 +15,7 @@ RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     suricata-update enable-source tgreen/hunting && \
     suricata-update enable-source malsilo/win-malware && \
     suricata-update enable-source stamus/lateral && \
-    suricata-update && \
+    suricata-update 2>&1 && \
     chmod 755 /start-suricata.sh && \
     mkdir -p /data && \
     mkdir -p /eve
