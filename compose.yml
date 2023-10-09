@@ -48,6 +48,20 @@ services:
       dockerfile: Dockerfile-pcapmover
     volumes:
       - ${TRAFFIC_DIR_HOST}:/data:rw
+  evebox:
+    image: jasonish/evebox
+    environment:
+      - EVEBOX_HTTP_TLS_ENABLED=false
+      - EVEBOX_AUTHENTICATION_REQUIRED=false
+    command: ["--elasticsearch", "http://elasticsearch:9200", "--input", "/eve/eve.json", "--data-directory", "/state"]
+    ports:
+      - "5636:5636"
+      # TODO: backup, move behind reverse proxy
+    volumes:
+      - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
+      - ${TRAFFIC_DIR_HOST}/evebox:/state:rw
+    networks:
+      internal:
 
 networks:
   internal:
