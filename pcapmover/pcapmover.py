@@ -36,7 +36,7 @@ async def add_arkime_task(path: Path):
     if not arkime_path.exists():
         logging.info(f"Adding {path.as_posix()} to Arkime.")
         arkime_path.hardlink_to(path)
-        with path.open('ab'):
+        with arkime_path.open('ab'):
             pass
 
 async def arkime_delayed(path: Path):

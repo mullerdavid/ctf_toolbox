@@ -94,3 +94,6 @@ networks:
 
 # wsl -d docker-desktop
 # sudo sysctl -w vm.max_map_count=262144
+
+# docker exec ctf_toolbox-pcapmover-1 bash -c 'touch /data/*.pcap'
+# docker compose up --build -d --force-recreate
