@@ -114,6 +114,7 @@ services:
         condition: service_completed_successfully
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./haproxy:/usr/local/etc/haproxy:ro
       - certgen-data:/ssl
