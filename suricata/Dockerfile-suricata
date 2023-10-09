@@ -3,6 +3,9 @@ FROM ubuntu:22.04
 # Add new entrypoint
 COPY start-suricata.sh /start-suricata.sh
 
+# Copy configs
+COPY disable.conf /etc/suricata/disable.conf
+
 # Install Suricata
 RUN apt-get update && \
     apt-get install -y suricata && \
@@ -13,7 +16,6 @@ RUN apt-get update && \
     suricata-update enable-source et/open && \
     suricata-update enable-source oisf/trafficid && \
     suricata-update enable-source tgreen/hunting && \
-    suricata-update enable-source malsilo/win-malware && \
     suricata-update enable-source stamus/lateral && \
     suricata-update 2>&1 && \
     chmod 755 /start-suricata.sh && \

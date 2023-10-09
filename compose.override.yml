@@ -2,12 +2,15 @@ version: '3.4'
 
 services:
   mongo:
+    restart: unless-stopped
     ports: !reset []
   api:
+    restart: unless-stopped
     ports: !reset []
     volumes:
       - ${TRAFFIC_DIR_HOST}/arkime:${TRAFFIC_DIR_DOCKER}:ro
   frontend:
+    restart: unless-stopped
     build:
       context: tulip/frontend
       dockerfile: ../../tulip-override/Dockerfile-frontend-override
@@ -19,9 +22,11 @@ services:
         retries: 3
     ports: !reset []
   assembler:
+    restart: unless-stopped
     volumes:
       - ${TRAFFIC_DIR_HOST}/arkime:${TRAFFIC_DIR_DOCKER}:ro
   enricher:
+    restart: unless-stopped
     command: "./enricher -eve ${TRAFFIC_DIR_DOCKER}/suricata_logs/eve.json"
     volumes:
       - ${TRAFFIC_DIR_HOST}:${TRAFFIC_DIR_DOCKER}:ro
