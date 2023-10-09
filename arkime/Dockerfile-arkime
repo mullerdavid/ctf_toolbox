@@ -1,0 +1,43 @@
+FROM ubuntu:22.04
+
+# Declare args
+ARG ARKIME_VERSION=4.5.0
+ARG UBUNTU_VERSION=22.04
+ARG ARKIME_DEB_PACKAGE="arkime_"$ARKIME_VERSION"-1_amd64.deb"
+
+# Declare envs vars for each arg
+ENV ARKIME_VERSION $ARKIME_VERSION
+ENV ES_HOST "elasticsearch"
+ENV ES_PORT 9200
+ENV ARKIME_ADMIN_USERNAME "admin"
+ENV ARKIME_ADMIN_PASSWORD "admin"
+ENV ARKIME_WEBAUTH_TOKEN "webauth_c2fc2c614b28e9d82387072519e08649"
+ENV ARKIME_HOSTNAME "arkime"
+ENV ARKIMEDIR "/opt/arkime"
+
+# Add entrypoint
+COPY start-arkimeviewer.sh /start-arkimeviewer.sh
+
+# Install Arkime
+RUN apt-get update && \
+    apt-get install -y curl libmagic-dev wget logrotate && \
+    cd /tmp && \
+    wget -q "https://s3.amazonaws.com/files.molo.ch/builds/ubuntu-"$UBUNTU_VERSION"/"$ARKIME_DEB_PACKAGE && \
+    apt-get install -y ./$ARKIME_DEB_PACKAGE && \
+    sed -e "s,ARKIME_ELASTICSEARCH,http://${ES_HOST}:${ES_PORT},g" -e "s,ARKIME_INSTALL_DIR,${ARKIMEDIR},g" -e "s,interface=.*,#interface=,g" -e "s,#includes=.*,includes=${ARKIMEDIR}/etc/config-override.ini,g" < $ARKIMEDIR/etc/config.ini.sample > $ARKIMEDIR/etc/config.ini && \
+    wget -q -O /opt/arkime/etc/ipv4-address-space.csv "https://www.iana.org/assignments/ipv4-address-space/ipv4-address-space.csv" && \
+    wget -q -O /opt/arkime/etc/oui.txt "https://www.wireshark.org/download/automated/data/manuf" && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/* && \
+    $ARKIMEDIR/bin/arkime_update_geo.sh && \
+    chmod 755 /start-arkimeviewer.sh && \
+    mkdir -p /data && \
+    mkdir -p /eve
+
+# Add config
+COPY config-override.ini $ARKIMEDIR/etc/config-override.ini
+
+VOLUME ["/data", "/eve"]
+EXPOSE 8005
+WORKDIR $ARKIMEDIR
+
+ENTRYPOINT ["/start-arkimeviewer.sh"]
