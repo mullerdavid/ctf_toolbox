@@ -1,0 +1,4 @@
+# Local .terraform directories
+_data/**/*.pcap
+_data/suricata_logs/*
+!_data/suricata_logs/eve.json
