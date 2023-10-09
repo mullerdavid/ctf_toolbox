@@ -4,19 +4,20 @@ FROM jasonish/suricata
 COPY start-suricata.sh /start-suricata.sh
 
 # Install Arkime
-RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_$(dpkg --print-architecture) -O /opt/bin/yq && \
-    chmod +x /opt/bin/yq && \
-    /opt/bin/yq -i 'del(.af-packet) | .default-rule-path = "/var/lib/suricata/rules/"' /etc/suricata/suricata.yaml
+RUN curl https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 --output /opt/yq && \
+    chmod +x /opt/yq && \
+    /opt/yq -i 'del(.af-packet) | .default-rule-path = "/var/lib/suricata/rules/"' /etc/suricata/suricata.yaml && \
     suricata-update update-sources && \
     suricata-update enable-source et/open && \
     suricata-update enable-source oisf/trafficid && \
     suricata-update enable-source tgreen/hunting && \
     suricata-update enable-source malsilo/win-malware && \
     suricata-update enable-source stamus/lateral && \
-    suricata-update
-    chmod 755 /start-arkimeviewer.sh && \
+    suricata-update && \
+    chmod 755 /start-suricata.sh && \
     mkdir -p /data && \
+    mkdir -p /eve
 
-VOLUME ["/data"]
+VOLUME ["/data", "/eve"]
 
-ENTRYPOINT ["/start-arkimeviewer.sh"]
+ENTRYPOINT ["/start-suricata.sh"]

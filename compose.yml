@@ -32,13 +32,16 @@ services:
         condition: service_healthy
     volumes:
       - ${TRAFFIC_DIR_HOST}/arkime:/data:ro
-      - ${TRAFFIC_DIR_HOST}/suricata/eve.json:/eve/eve.json:ro
+      - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
     networks:
       internal:
   suricata:
     build:
       context: suricata
-      dockerfile: Dockerfile-arkime
+      dockerfile: Dockerfile-suricata
+    volumes:
+      - ${TRAFFIC_DIR_HOST}/suricata:/data:rw
+      - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:rw
 
 networks:
   internal:
