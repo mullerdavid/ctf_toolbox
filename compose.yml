@@ -42,6 +42,12 @@ services:
     volumes:
       - ${TRAFFIC_DIR_HOST}/suricata:/data:rw
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:rw
+  pcapmover:
+    build:
+      context: pcapmover
+      dockerfile: Dockerfile-pcapmover
+    volumes:
+      - ${TRAFFIC_DIR_HOST}:/data:rw
 
 networks:
   internal:

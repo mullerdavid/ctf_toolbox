@@ -1,0 +1,10 @@
+FROM python:3.11
+
+RUN pip install asyncinotify && \
+    mkdir -p /data
+
+COPY pcapmover.py /pcapmover.py
+
+VOLUME ["/data"]
+
+ENTRYPOINT ["python3", "/pcapmover.py"]

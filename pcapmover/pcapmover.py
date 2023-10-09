@@ -11,7 +11,7 @@ import logging
 
 logging.basicConfig(format='[%(levelname)s] %(message)s', encoding='utf-8', level=logging.INFO)
 
-watch_dir = Path(environ.get("CAPTURE_DIRECTORY","/capture"))
+watch_dir = Path(environ.get("CAPTURE_DIRECTORY","/data"))
 
 suricata_dir = Path(watch_dir, "suricata")
 arkime_dir = Path(watch_dir, "arkime")

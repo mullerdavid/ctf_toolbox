@@ -1,9 +1,0 @@
-FROM python:3.11
-
-RUN pip install asyncinotify
-
-WORKDIR /app
-
-COPY ./pcap-mover.py /app/pcap-mover.py
-
-CMD python3 /app/pcap-mover.py
