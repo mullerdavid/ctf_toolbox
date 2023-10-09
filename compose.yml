@@ -1,5 +1,14 @@
 version: '3.4'
 
+include:
+  - path: tulip/docker-compose.yml
+    env_file:
+      - tulip/.env.example
+      - .env
+
+#networks:
+#  internal:
+
 volumes:
   elastic-data: #for ES data persistency
   evebox-data: #for EveBox data persistency
@@ -33,11 +42,10 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-    ports:
-      - "8005:8005"
-      # TODO: backup, move behind reverse proxy
+    #ports:
+    #   - "8005:8005"
     volumes:
-      - ${TRAFFIC_DIR_HOST}/arkime:/data
+      - ${TRAFFIC_DIR_HOST}/arkime:${TRAFFIC_DIR_DOCKER}
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
     networks:
       internal:
@@ -46,7 +54,7 @@ services:
       context: suricata
       dockerfile: Dockerfile-suricata
     volumes:
-      - ${TRAFFIC_DIR_HOST}/suricata:/data
+      - ${TRAFFIC_DIR_HOST}/suricata:${TRAFFIC_DIR_DOCKER}
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve
     cap_add:
       - SYS_NICE
@@ -54,8 +62,10 @@ services:
     build:
       context: pcapmover
       dockerfile: Dockerfile-pcapmover
+    environment:
+      - TRAFFIC_DIR_DOCKER=false
     volumes:
-      - ${TRAFFIC_DIR_HOST}:/data # all data
+      - ${TRAFFIC_DIR_HOST}:${TRAFFIC_DIR_DOCKER} # all data
   evebox:
     image: jasonish/evebox
     healthcheck:
@@ -71,23 +81,22 @@ services:
       - EVEBOX_HTTP_TLS_ENABLED=false
       - EVEBOX_AUTHENTICATION_REQUIRED=false
     command: ["--elasticsearch", "http://elasticsearch:9200", "--input", "/eve/eve.json", "--data-directory", "/state"]
-    ports:
-      - "5636:5636"
-      # TODO: backup, move behind reverse proxy
+    #ports:
+    #   - "5636:5636"
     volumes:
       - ${TRAFFIC_DIR_HOST}/suricata_logs:/eve:ro
       - ${EVEBOX_DATAPATH:-evebox-data}:/state
     networks:
       internal:
-
-networks:
-  internal:
-
-#include:
-#  - path: tulip/docker-compose.yml
-#    env_file:
-#      - tulip/.env.example
-#      - .env
+  haproxy:
+    image: haproxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./haproxy:/usr/local/etc/haproxy:ro
+    networks:
+      internal:
+    
 
 # docker compose up -d --build
 # docker compose up -d --build api
