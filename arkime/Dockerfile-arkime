@@ -20,7 +20,7 @@ COPY start-arkimeviewer.sh /start-arkimeviewer.sh
 
 # Install Arkime
 RUN apt-get update && \
-    apt-get install -y curl libmagic-dev wget logrotate && \
+    apt-get install -y curl libmagic-dev wget logrotate lua5.4 && \
     cd /tmp && \
     wget -q "https://s3.amazonaws.com/files.molo.ch/builds/ubuntu-"$UBUNTU_VERSION"/"$ARKIME_DEB_PACKAGE && \
     apt-get install -y ./$ARKIME_DEB_PACKAGE && \
@@ -35,6 +35,7 @@ RUN apt-get update && \
 
 # Add config
 COPY config-override.ini $ARKIMEDIR/etc/config-override.ini
+COPY flag.lua /opt/flag.lua
 
 VOLUME ["/data", "/eve"]
 EXPOSE 8005
