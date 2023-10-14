@@ -122,6 +122,18 @@ services:
       - certgen-data:/ssl
     networks:
       internal:
+  vmtouch:
+    build:
+      context: vmtouch
+      dockerfile: Dockerfile-vmtouch
+    environment:
+      - MAX_SIZE=${VMTOUCH_MEMORY}
+      - SLEEP_SECONDS=300
+    networks: []
+    volumes:
+      - ${TRAFFIC_DIR_HOST}/arkime:/data
+    cap_add:
+      - CAP_IPC_LOCK
     
 
 # docker compose up -d --build

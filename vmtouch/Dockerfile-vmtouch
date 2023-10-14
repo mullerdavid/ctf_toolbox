@@ -1,0 +1,23 @@
+FROM ubuntu:22.04
+
+# Declare args
+ARG VMTOUCH_SLEEP=10m
+
+# Declare envs vars for each arg
+ENV VMTOUCH_SLEEP $VMTOUCH_SLEEP
+
+# Add entrypoint
+COPY start-vmtouch.py /start-vmtouch.py
+
+# Install VMTouch
+RUN apt-get update && \ 
+    apt-get install -y  build-essential git python3 && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/* && \
+    cd /opt && \
+    git clone https://github.com/hoytech/vmtouch.git && \
+    cd vmtouch && \
+    make && \
+    make install
+
+VOLUME ["/data"]
+ENTRYPOINT ["/usr/bin/python3", "/start-vmtouch.py"]
