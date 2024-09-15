@@ -1,13 +1,9 @@
-version: '3.4'
-
 include:
-  - path: tulip/docker-compose.yml
-    env_file:
-      - tulip/.env.example
+  - env_file:
       - .env
 
-#networks:
-#  internal:
+networks:
+  internal:
 
 volumes:
   elastic-data: #for ES data persistency
@@ -16,7 +12,7 @@ volumes:
 
 services:
   elasticsearch:
-    image: elasticsearch:8.10.2
+    image: elasticsearch:8.15.1
     restart: unless-stopped
     env_file:
       - elasticsearch/elasticsearch.env
@@ -110,8 +106,6 @@ services:
         condition: service_started
       arkime:
         condition: service_started
-      frontend:
-        condition: service_started
       certgen:
         condition: service_completed_successfully
     ports:
@@ -137,13 +131,14 @@ services:
     
 
 # docker compose up -d --build
-# docker compose up -d --build api
+# docker compose up -d --build --force-recreate
 
 # wsl -d docker-desktop
 # sudo sysctl -w vm.max_map_count=262144
 
 # docker exec ctf_toolbox-pcapmover-1 bash -c 'touch /data/*.pcap'
-# docker compose up --build -d --force-recreate
 
 # TODO: suricata disable signatures test
 # TODO: https
+
+# TODO: .env memory limits

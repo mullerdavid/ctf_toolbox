@@ -1,6 +1,0 @@
-# syntax = edrevo/dockerfile-plus
-
-INCLUDE+ Dockerfile-frontend
-
-RUN sed -i -e 's,<BrowserRouter>,<BrowserRouter basename=\"/tulip\">,g' ./src/App.tsx && \
-    yarn run build

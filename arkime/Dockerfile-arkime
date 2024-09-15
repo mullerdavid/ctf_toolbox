@@ -1,9 +1,9 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Declare args
-ARG ARKIME_VERSION=4.5.0
-ARG UBUNTU_VERSION=22.04
-ARG ARKIME_DEB_PACKAGE="arkime_"$ARKIME_VERSION"-1_amd64.deb"
+ARG ARKIME_VERSION=5.4.0
+ARG ARKIME_OS_VERSION="ubuntu2404"
+ARG ARKIME_DEB_PACKAGE="arkime_"$ARKIME_VERSION"-1."$ARKIME_OS_VERSION"_amd64.deb"
 
 # Declare envs vars for each arg
 ENV ARKIME_VERSION $ARKIME_VERSION
@@ -22,7 +22,7 @@ COPY start-arkimeviewer.sh /start-arkimeviewer.sh
 RUN apt-get update && \
     apt-get install -y curl libmagic-dev wget logrotate lua5.4 && \
     cd /tmp && \
-    wget -q "https://s3.amazonaws.com/files.molo.ch/builds/ubuntu-"$UBUNTU_VERSION"/"$ARKIME_DEB_PACKAGE && \
+    wget -q "https://github.com/arkime/arkime/releases/download/v"$ARKIME_VERSION"/"$ARKIME_DEB_PACKAGE && \
     apt-get install -y ./$ARKIME_DEB_PACKAGE && \
     sed -e "s,ARKIME_ELASTICSEARCH,http://${ES_HOST}:${ES_PORT},g" -e "s,ARKIME_INSTALL_DIR,${ARKIMEDIR},g" -e "s,interface=.*,#interface=,g" -e "s,#includes=.*,includes=${ARKIMEDIR}/etc/config-override.ini,g" < $ARKIMEDIR/etc/config.ini.sample > $ARKIMEDIR/etc/config.ini && \
     wget -q -O /opt/arkime/etc/ipv4-address-space.csv "https://www.iana.org/assignments/ipv4-address-space/ipv4-address-space.csv" && \
