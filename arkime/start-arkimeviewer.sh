@@ -25,8 +25,7 @@ fi
 # set runtime environment variables
 export ARKIME_ELASTICSEARCH="http://"$ES_HOST":"$ES_PORT
 $ARKIMEDIR/db/db.pl $ARKIME_ELASTICSEARCH init --ifneeded
-$ARKIMEDIR/bin/arkime_add_user.sh $ARKIME_ADMIN_USERNAME admin $ARKIME_ADMIN_PASSWORD --admin --email --remove --packetSearch --createOnly
-$ARKIMEDIR/bin/arkime_add_user.sh $ARKIME_WEBAUTH_TOKEN webauth $ARKIME_WEBAUTH_TOKEN --admin --webauthonly --email --remove --packetSearch --createOnly
+$ARKIMEDIR/bin/arkime_add_user.sh $ARKIME_ADMIN_USERNAME admin $ARKIME_ADMIN_PASSWORD --admin --webauth --email --remove --packetSearch --createOnly
 
 echo "Starting Arkime capture in the background..."
 cd $ARKIMEDIR
