@@ -10,7 +10,11 @@ import (
     "os"
 	"net/http"
 	"io/ioutil"
+	"encoding/json"
 )
+
+type JSONMap = map[string]interface{}
+type JSONArray = []interface{}
 
 func createHexDecoder() (f func(json string) string) {
 	const prefix = "_raw\":\""
@@ -40,6 +44,8 @@ func createHexDecoder() (f func(json string) string) {
 }
 
 func sendBulkToElastic(host string, buf []byte) {
+	fmt.Println(string(buf))
+	return
 	retries := 3
 	client := &http.Client{}
 	for 0 <= retries {
@@ -68,15 +74,22 @@ func sendBulkToElastic(host string, buf []byte) {
     }
 }
 
+func unmarshal[T any](data []byte) (*T, error) {
+    out := new(T)
+    if err := json.Unmarshal(data, out); err != nil {
+        return nil, err
+    }
+    return out, nil
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage:", os.Args[0], "http://elasticsearch:9200/_bulk")
 		fmt.Println("Example:", os.Args[0], "http://elasticsearch:9200/_bulk")
 	} else {
 		elasticHost := os.Args[1]
-	
+
 		const batch = 1024
-		decoder := createHexDecoder()
 		scanner := bufio.NewScanner(os.Stdin)
 		readBuf := make([]byte, 0, 1024*1024)
 		scanner.Buffer(readBuf, 32*1024*1024)
@@ -85,19 +98,55 @@ func main() {
 	
 		for scanner.Scan() {
 			line := scanner.Text()
-			content := !strings.HasPrefix(line, "{\"index\":{\"_index\"")
-			if content {
-				// decoding fields ending _raw and containing hex data to plaintext
+			var jsonmap JSONMap
+			var exists bool
+			var node string
+			var nodeArr JSONArray
+			_ = json.Unmarshal([]byte(line), &jsonmap)
+			node_index, index := jsonmap["index"].(JSONMap)
+			if index {
+				// removing _type from indices, elastic 8.15 is not using it (and results in error)
+				delete(node_index, "_type")
+			} 
+			node_layers, data := jsonmap["layers"].(JSONMap)
+			if data {
+				// decoding some fields ending _raw and containing hex data to plaintext
 				// unreadable characters are encoded as \u00xx
-				line = decoder(line)
+				node_udp, udp := node_layers["udp"].(JSONMap)
+				if udp {
+					node, exists = node_udp["udp_udp_payload_raw"].(string)
+					if (exists) {
+						node_udp["udp_udp_payload_raw"] = "HELLO" + node
+					}
+				}
+				node_tcp, tcp := node_layers["tcp"].(JSONMap)
+				if tcp {
+					node, exists = node_tcp["tcp_tcp_payload_raw"].(string)
+					if (exists) {
+						node_tcp["tcp_tcp_payload_raw"] = "WORLD" + node
+					}
+				}
+				node_http, http := node_layers["http"].(JSONMap)
+				if http {
+					nodeArr, exists = node_http["http_http_request_line_raw"].(JSONArray)
+					if (exists) {
+						node_http["http_http_request_line_raw"] = JSONArray{"XXXXXXXXXX"}
+					}
+					nodeArr, exists = node_http["http_http_response_line_raw"].(JSONArray)
+					if (exists) {
+						node_http["http_http_response_line_raw"] = JSONArray{"ZZZZZZZZZZ"}
+					}
+					if false {
+						fmt.Println(nodeArr)
+					}
+				}
 				counter ++
-			} else {
-				// removing _type from indices
-				line = strings.Replace(line, ",\"_type\":\"doc\"", "", 1)
 			}
-			writeBuf.Write([]byte(line))
+			// TODO: Encoder.SetEscapeHTML(false)
+			buff, _ := json.Marshal(jsonmap)
+			writeBuf.Write(buff)
 			writeBuf.WriteRune('\n')
-			if content && counter % batch == 0 {
+			if data && counter % batch == 0 {
 				sendBulkToElastic(elasticHost, writeBuf.Bytes() )
 				writeBuf.Reset()
 			}
