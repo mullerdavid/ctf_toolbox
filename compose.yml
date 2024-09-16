@@ -25,6 +25,8 @@ services:
         interval: 30s
         timeout: 30s
         retries: 3
+    #ports:
+    #   - "9200:9200"
     networks:
       internal:
   kibana:
@@ -32,12 +34,16 @@ services:
     restart: unless-stopped
     env_file:
       - kibana/kibana.env
-    # TODO: healthcheck
+    healthcheck:
+        test: ["CMD-SHELL", "curl --silent --fail localhost:5601/api/status || exit 1"]
+        interval: 30s
+        timeout: 30s
+        retries: 3
     depends_on:
       elasticsearch:
         condition: service_healthy
-    ports: # TODO: move behind haproxy
-       - "5601:5601"
+    #ports:
+    #   - "5601:5601"
     networks:
       internal:
   arkime:
@@ -86,7 +92,7 @@ services:
     image: jasonish/evebox
     restart: unless-stopped
     healthcheck:
-        test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:5636 || exit 1"]
+        test: ["CMD-SHELL", "curl --silent --fail localhost:5636 || exit 1"]
         start_period: 120s
         interval: 60s
         timeout: 30s
@@ -116,6 +122,8 @@ services:
     restart: unless-stopped
     depends_on:
       evebox:
+        condition: service_started
+      kibana:
         condition: service_started
       arkime:
         condition: service_started
