@@ -1,0 +1,3 @@
+tshark -G elastic-mapping --elastic-mapping-filter http,tcp,udp,ip | jq -f mapping-transform.jq > mapping.json
+
+# TODO: move into build step
