@@ -17,35 +17,25 @@ type JSONMap = map[string]interface{}
 type JSONArray = []interface{}
 
 func createHexDecoder() (f func(json string) string) {
-	const prefix = "_raw\":\""
-	const postfix = "\""
-    search := regexp.MustCompile(prefix + "([0-9a-fA-F]{2})+" + postfix)
+    search := regexp.MustCompile("([0-9a-fA-F]{2})+")
 	return func(json string) string {
 		json = search.ReplaceAllStringFunc(json, func(match string) string {
 			var sb strings.Builder
-			length := len(match)-len(postfix)
-			for i := len(prefix); i < length; i+=2 {
+			length := len(match)
+			for i := 0; i < length; i+=2 {
 				hex := match[i : (i+2)]
-				value, _ := strconv.ParseInt(hex, 16, 8)
-				if 0x20 <= value && value <= 0x7e {
-					if value == 0x22 || value == 0x5c { //escape quote and backslash
-						sb.WriteString("\\")
-					} 
-					sb.WriteRune(rune(value))
-				} else {
-					sb.WriteString("\\u00")
-					sb.WriteString(hex)
-				}
+				value, _ := strconv.ParseInt(hex, 16, 9)
+				sb.WriteRune(rune(value))
 			}
-			return prefix + sb.String() + postfix
+			return sb.String()
 		})
 		return json
 	}
 }
 
+var hexDecode func(string) string = createHexDecoder() 
+
 func sendBulkToElastic(host string, buf []byte) {
-	fmt.Println(string(buf))
-	return
 	retries := 3
 	client := &http.Client{}
 	for 0 <= retries {
@@ -62,7 +52,7 @@ func sendBulkToElastic(host string, buf []byte) {
             continue
         }
 		defer res.Body.Close()
-		if true {
+		if false {
 			body, err := ioutil.ReadAll(res.Body)
 			if err != nil {
 				fmt.Println(err)
@@ -84,8 +74,9 @@ func unmarshal[T any](data []byte) (*T, error) {
 
 func main() {
 	if len(os.Args) < 2 {
+		fmt.Println("Reads tshark output from stdin and transforms and sends to elasticsearch bulk endpoint.")
 		fmt.Println("Usage:", os.Args[0], "http://elasticsearch:9200/_bulk")
-		fmt.Println("Example:", os.Args[0], "http://elasticsearch:9200/_bulk")
+		fmt.Println("Example: tshark -T ek -J \"http tcp udp ip\" -x -r ./dump.pcap |", os.Args[0], "http://localhost:9200/packets_template/_bulk")
 	} else {
 		elasticHost := os.Args[1]
 
@@ -116,14 +107,14 @@ func main() {
 				if udp {
 					node, exists = node_udp["udp_udp_payload_raw"].(string)
 					if (exists) {
-						node_udp["udp_udp_payload_raw"] = "HELLO" + node
+						node_udp["udp_udp_payload_raw"] = hexDecode(node)
 					}
 				}
 				node_tcp, tcp := node_layers["tcp"].(JSONMap)
 				if tcp {
 					node, exists = node_tcp["tcp_tcp_payload_raw"].(string)
 					if (exists) {
-						node_tcp["tcp_tcp_payload_raw"] = "WORLD" + node
+						node_tcp["tcp_tcp_payload_raw"] = hexDecode(node)
 					}
 				}
 				node_http, http := node_layers["http"].(JSONMap)
@@ -142,7 +133,6 @@ func main() {
 				}
 				counter ++
 			}
-			// TODO: Encoder.SetEscapeHTML(false)
 			buff, _ := json.Marshal(jsonmap)
 			writeBuf.Write(buff)
 			writeBuf.WriteRune('\n')
@@ -160,5 +150,3 @@ func main() {
 		}
 	}
 }
-
-//TODO: error handling 
