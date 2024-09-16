@@ -8,13 +8,33 @@
             "properties": {
                 "layers": {
                     "properties": {
+                        "udp": {
+                            "properties": {
+                                "udp_udp_payload_raw": {
+                                    "type": "wildcard"
+                                }
+                            }
+                        },
+                        "tcp": {
+                            "properties": {
+                                "tcp_tcp_payload_raw": {
+                                    "type": "wildcard"
+                                }
+                            }
+                        },
                         "http": {
                             "properties": {
+                                "http_http_request_line": {
+                                    "type": "text"
+                                },
                                 "http_http_request_line_raw": {
+                                    "type": "wildcard"
+                                },
+                                "http_http_response_line": {
                                     "type": "text"
                                 },
                                 "http_http_response_line_raw": {
-                                    "type": "text"
+                                    "type": "wildcard"
                                 }
                             }
                         }
