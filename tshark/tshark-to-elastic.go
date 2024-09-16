@@ -35,6 +35,13 @@ func createHexDecoder() (f func(json string) string) {
 
 var hexDecode func(string) string = createHexDecoder() 
 
+func hexDecodeArray(arr JSONArray) JSONArray {
+	for k, v := range arr {
+        arr[k] = hexDecode(v.(string))
+    }
+	return arr
+}
+
 func sendBulkToElastic(host string, buf []byte) {
 	retries := 3
 	client := &http.Client{}
@@ -80,7 +87,7 @@ func main() {
 	} else {
 		elasticHost := os.Args[1]
 
-		const batch = 1024
+		const batch = 1024*1024*15 // 15MiB
 		scanner := bufio.NewScanner(os.Stdin)
 		readBuf := make([]byte, 0, 1024*1024)
 		scanner.Buffer(readBuf, 32*1024*1024)
@@ -121,11 +128,11 @@ func main() {
 				if http {
 					nodeArr, exists = node_http["http_http_request_line_raw"].(JSONArray)
 					if (exists) {
-						node_http["http_http_request_line_raw"] = JSONArray{"XXXXXXXXXX"}
+						node_http["http_http_request_line_raw"] = hexDecodeArray(nodeArr)
 					}
 					nodeArr, exists = node_http["http_http_response_line_raw"].(JSONArray)
 					if (exists) {
-						node_http["http_http_response_line_raw"] = JSONArray{"ZZZZZZZZZZ"}
+						node_http["http_http_response_line_raw"] = hexDecodeArray(nodeArr)
 					}
 					if false {
 						fmt.Println(nodeArr)
@@ -136,13 +143,15 @@ func main() {
 			buff, _ := json.Marshal(jsonmap)
 			writeBuf.Write(buff)
 			writeBuf.WriteRune('\n')
-			if data && counter % batch == 0 {
+			if data && (batch < writeBuf.Len() ) {
 				sendBulkToElastic(elasticHost, writeBuf.Bytes() )
+				fmt.Println("Written", counter, "records,", writeBuf.Len(), "bytes")
 				writeBuf.Reset()
 			}
 		}
-		if counter % batch != 0 {
+		if 0 < writeBuf.Len() {
 			sendBulkToElastic(elasticHost, writeBuf.Bytes() )
+			fmt.Println("Written ", counter, "records,", writeBuf.Len(), "bytes")
 		}
 	
 		if err := scanner.Err(); err != nil {
