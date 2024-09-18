@@ -1,4 +1,0 @@
-tshark -G elastic-mapping --elastic-mapping-filter http,tcp,udp,ip | jq -f mapping-transform.jq > mapping.json
-curl -X PUT "localhost:9200/_index_template/packets_template" -H 'Content-Type: application/json' --data-binary @mapping.json
-
-# TODO: move into build step

@@ -1,9 +1,26 @@
-FROM python:3.12
+# builder stage
+FROM golang:1.23
 
-RUN pip install asyncinotify && \
+WORKDIR /app
+
+# sources
+COPY tshark-to-elastic.go /app
+
+# generate output
+RUN /bin/sh -c "echo 'module deathbaron.org/tshark-to-elastic\n\ngo 1.23' > go.mod && CGO_ENABLED=0 GOOS=linux go build -o tshark-to-elastic"
+
+# actual image
+FROM python:3.12-alpine
+
+RUN apk update && \
+    apk add tshark curl jq && \
+    pip install asyncinotify requests && \
     mkdir -p /data
 
-COPY pcapmover.py /pcapmover.py
+COPY --from=0 /app/tshark-to-elastic /
+COPY pcapmover.py tshark-mapping-to-elastic.jq /
+
+RUN /bin/sh -c "tshark -G elastic-mapping --elastic-mapping-filter http,tcp,udp,ip | jq -f /tshark-mapping-to-elastic.jq > /mapping.json"
 
 VOLUME ["/data"]
 

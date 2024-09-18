@@ -1,5 +1,5 @@
 #!/bin/env python3
-# pip3 install asyncinotify 
+# pip3 install asyncinotify requests 
 # set CAPTURE_DIRECTORY for watched folder
 
 from pathlib import Path
@@ -7,6 +7,8 @@ from asyncinotify import Inotify, Mask
 from os import environ
 import asyncio
 import logging
+import requests
+import subprocess
 
 
 logging.basicConfig(format='[%(levelname)s] %(message)s', encoding='utf-8', level=logging.INFO)
@@ -15,6 +17,9 @@ watch_dir = Path(environ.get("CAPTURE_DIRECTORY","/data"))
 
 suricata_dir = Path(watch_dir, "suricata")
 arkime_dir = Path(watch_dir, "arkime")
+
+elastic_host = environ.get("ELASTIC_HOST", None)
+elastic_mappings_file = environ.get("ELASTIC_MAPPINGS_FILE", "./mapping.json")
 
 background_tasks = set()
 
@@ -34,10 +39,16 @@ async def add_suricata_task(path: Path):
 async def add_arkime_task(path: Path):
     arkime_path = Path(arkime_dir, path.name)
     if not arkime_path.exists():
+        await add_elastic_task(path)
         logging.info(f"Adding {path.as_posix()} to Arkime.")
         arkime_path.hardlink_to(path)
         with arkime_path.open('ab'):
             pass
+
+async def add_elastic_task(path: Path):
+    p = path.as_posix()
+    pid = subprocess.Popen(f"(tshark -T ek -J 'http tcp udp ip' -x -r '{p}' | ./tshark-to-elastic '{elastic_host}/packets_template/_bulk') &", shell=True)
+    logging.info(f"Adding {p} to Elastic.")
 
 async def arkime_delayed(path: Path):
     await asyncio.sleep(60)
@@ -55,6 +66,22 @@ def add_missing():
 
 async def main():
     logging.info("Starting.")
+    if elastic_host:
+        for i in range(10):
+            try:
+                resp = requests.post(f"{elastic_host}/_cluster/health?wait_for_status=yellow", timeout=3)
+                if resp.status == 200:
+                    break
+                logging.info("Waiting for ES to start.")
+                asyncio.sleep(3000)
+            except Exception as ex:
+                pass
+        try:
+            mappings = open(elastic_mappings_file, "rb").read()
+            requests.post(f"{elastic_host}/_index_template/packets_template", data=mappings, headers={"Content-Type" : "application/json"}, timeout=3)
+            logging.info("Updating elastic mapping.")
+        except Exception as ex:
+            logging.warning(f"Error sending mapping to elastic: {ex}")
     suricata_dir.mkdir(parents=True, exist_ok=True)
     arkime_dir.mkdir(parents=True, exist_ok=True)
     with Inotify() as inotify:
