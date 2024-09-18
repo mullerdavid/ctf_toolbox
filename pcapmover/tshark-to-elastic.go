@@ -145,13 +145,13 @@ func main() {
 			writeBuf.WriteRune('\n')
 			if data && (batch < writeBuf.Len() ) {
 				sendBulkToElastic(elasticHost, writeBuf.Bytes() )
-				fmt.Println("Written", counter, "records,", writeBuf.Len(), "bytes")
+				fmt.Println("Written", counter, "records overall,", writeBuf.Len(), "bytes this batch")
 				writeBuf.Reset()
 			}
 		}
 		if 0 < writeBuf.Len() {
 			sendBulkToElastic(elasticHost, writeBuf.Bytes() )
-			fmt.Println("Written ", counter, "records,", writeBuf.Len(), "bytes")
+			fmt.Println("Written ", counter, "records overall,", writeBuf.Len(), "bytes this batch")
 		}
 	
 		if err := scanner.Err(); err != nil {
