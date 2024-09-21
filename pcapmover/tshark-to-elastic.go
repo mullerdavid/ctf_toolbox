@@ -8,8 +8,9 @@ import (
     "bufio"
     "fmt"
     "os"
-	"net/http"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"encoding/json"
 )
 
@@ -79,6 +80,21 @@ func unmarshal[T any](data []byte) (*T, error) {
     return out, nil
 }
 
+func read(r *bufio.Reader) ([]byte, error) {
+    var (
+        isPrefix = true
+        err      error
+        line, ln []byte
+    )
+
+    for isPrefix && err == nil {
+        line, isPrefix, err = r.ReadLine()
+        ln = append(ln, line...)
+    }
+
+    return ln, err
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Reads tshark output from stdin and transforms and sends to elasticsearch bulk endpoint.")
@@ -88,19 +104,29 @@ func main() {
 		elasticHost := os.Args[1]
 
 		const batch = 1024*1024*15 // 15MiB
-		scanner := bufio.NewScanner(os.Stdin)
-		readBuf := make([]byte, 0, 1024*1024)
-		scanner.Buffer(readBuf, 128*1024*1024)
+		reader := bufio.NewReader(os.Stdin)
 		counter := 0
 		var writeBuf bytes.Buffer
+
+		for {
+			line, err := read(reader)
+			if err != nil {
+				if err != io.EOF {
+				}
+				break
+				fmt.Println("Error:", err)
+			}
 	
-		for scanner.Scan() {
-			line := scanner.Text()
 			var jsonmap JSONMap
 			var exists bool
 			var node string
 			var nodeArr JSONArray
-			_ = json.Unmarshal([]byte(line), &jsonmap)
+			if len(line) < batch*2 {
+				_ = json.Unmarshal([]byte(line), &jsonmap)
+			} else {
+				fmt.Println("Skipping record, too big")
+				_ = json.Unmarshal([]byte("{\"too_big\":true}"), &jsonmap)
+			}
 			node_index, index := jsonmap["index"].(JSONMap)
 			if index {
 				// removing _type from indices, elastic 8.15 is not using it (and results in error)
@@ -126,6 +152,10 @@ func main() {
 				}
 				node_http, http := node_layers["http"].(JSONMap)
 				if http {
+					node, exists = node_http["http_http_data_raw"].(string)
+					if (exists) {
+						node_http["http_http_data_raw"] = hexDecode(node)
+					}
 					nodeArr, exists = node_http["http_http_request_line_raw"].(JSONArray)
 					if (exists) {
 						node_http["http_http_request_line_raw"] = hexDecodeArray(nodeArr)
@@ -152,10 +182,6 @@ func main() {
 		if 0 < writeBuf.Len() {
 			sendBulkToElastic(elasticHost, writeBuf.Bytes() )
 			fmt.Println("Written ", counter, "records overall,", writeBuf.Len(), "bytes this batch")
-		}
-	
-		if err := scanner.Err(); err != nil {
-			fmt.Println(err)
 		}
 	}
 }
