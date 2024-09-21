@@ -47,7 +47,7 @@ async def add_arkime_task(path: Path):
 
 async def add_elastic_task(path: Path):
     p = path.as_posix()
-    pid = subprocess.Popen(f"(tshark -T ek -J 'http tcp udp ip' -x -r '{p}' | ./tshark-to-elastic '{elastic_host}/packets_template/_bulk') &", shell=True)
+    pid = subprocess.Popen(f"(tshark -T ek -J 'http tcp udp ip' -x -r '{p}' | ./tshark-to-elastic '{elastic_host}/packets_template/_bulk') &", shell=True, start_new_session=True)
     logging.info(f"Adding {p} to Elastic.")
 
 async def arkime_delayed(path: Path):

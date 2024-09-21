@@ -90,7 +90,7 @@ func main() {
 		const batch = 1024*1024*15 // 15MiB
 		scanner := bufio.NewScanner(os.Stdin)
 		readBuf := make([]byte, 0, 1024*1024)
-		scanner.Buffer(readBuf, 32*1024*1024)
+		scanner.Buffer(readBuf, 128*1024*1024)
 		counter := 0
 		var writeBuf bytes.Buffer
 	
