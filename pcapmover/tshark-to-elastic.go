@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"encoding/json"
+	"time"
 )
 
 const batch = 1024*1024*15 // 15MiB
@@ -59,6 +60,7 @@ func sendBulkToElastic(host string, buf []byte) {
 		res, err := client.Do(req)
         if err != nil {
 			fmt.Println(err)
+			time.Sleep(time.Second) 
             continue
         }
 		defer res.Body.Close()
