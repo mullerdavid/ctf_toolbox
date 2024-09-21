@@ -14,6 +14,8 @@ import (
 	"encoding/json"
 )
 
+const batch = 1024*1024*15 // 15MiB
+
 type JSONMap = map[string]interface{}
 type JSONArray = []interface{}
 
@@ -89,7 +91,9 @@ func read(r *bufio.Reader) ([]byte, error) {
 
     for isPrefix && err == nil {
         line, isPrefix, err = r.ReadLine()
-        ln = append(ln, line...)
+		if len(line) < batch*2 { //read full line, but don't copy if too big
+        	ln = append(ln, line...)
+		}
     }
 
     return ln, err
@@ -103,7 +107,6 @@ func main() {
 	} else {
 		elasticHost := os.Args[1]
 
-		const batch = 1024*1024*15 // 15MiB
 		reader := bufio.NewReader(os.Stdin)
 		counter := 0
 		var writeBuf bytes.Buffer
