@@ -93,7 +93,7 @@ func read(r *bufio.Reader) ([]byte, error) {
 
     for isPrefix && err == nil {
         line, isPrefix, err = r.ReadLine()
-		if len(line) < batch*2 { //read full line, but don't copy if too big
+		if len(ln) < batch*2 { //read full line, but don't copy if too big
         	ln = append(ln, line...)
 		}
     }
