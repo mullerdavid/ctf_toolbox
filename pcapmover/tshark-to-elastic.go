@@ -20,7 +20,23 @@ const batch = 1024*1024*15 // 15MiB
 type JSONMap = map[string]interface{}
 type JSONArray = []interface{}
 
-func createHexDecoder() (f func(json string) string) {
+func createFlagMatcher() (f func(string) bool) {
+	flagformat := os.Getenv("FLAG_REGEX")
+	if flagformat == "" {
+		return func(string) bool {
+			return false
+		}
+	} else {
+		search := regexp.MustCompile(flagformat)
+		return func(input string) bool {
+			return search.MatchString(input)
+		}
+	}
+}
+
+var flagMatch func(string) bool = createFlagMatcher() 
+
+func createHexDecoder() (f func(string) string) {
     search := regexp.MustCompile("([0-9a-fA-F]{2})+")
 	return func(json string) string {
 		json = search.ReplaceAllStringFunc(json, func(match string) string {
@@ -145,14 +161,18 @@ func main() {
 				if udp {
 					node, exists = node_udp["udp_udp_payload_raw"].(string)
 					if (exists) {
-						node_udp["udp_udp_payload_raw"] = hexDecode(node)
+						raw := hexDecode(node)
+						node_udp["udp_udp_payload_raw"] = raw
+						jsonmap["flag"] = flagMatch(raw)
 					}
 				}
 				node_tcp, tcp := node_layers["tcp"].(JSONMap)
 				if tcp {
 					node, exists = node_tcp["tcp_tcp_payload_raw"].(string)
 					if (exists) {
-						node_tcp["tcp_tcp_payload_raw"] = hexDecode(node)
+						raw := hexDecode(node)
+						node_tcp["tcp_tcp_payload_raw"] = raw
+						jsonmap["flag"] = flagMatch(raw)
 					}
 				}
 				node_http, http := node_layers["http"].(JSONMap)

@@ -87,6 +87,7 @@ services:
     environment:
       - TRAFFIC_DIR_DOCKER=false
       - ELASTIC_HOST=http://elasticsearch:9200
+      - FLAG_REGEX=${FLAG_REGEX}
     depends_on:
       elasticsearch:
         condition: service_healthy

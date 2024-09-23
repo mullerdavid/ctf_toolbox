@@ -6,6 +6,9 @@
         } ), 
         "mappings": ( .mappings * {
             "properties": {
+                "flag": {
+                    "type": "boolean"
+                },
                 "layers": {
                     "properties": {
                         "udp": {

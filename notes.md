@@ -5,6 +5,7 @@ docker compose up -d --build
 docker compose up -d --build --force-recreate
 docker compose up -d --no-deps --build --force-recreate arkime
 docker compose exec pcapmover sh -c "printf '' | tee -a /data/*.pcap"
+docker compose exec pcapmover sh -c "cd /data; for f in *.pcap ; do printf '' | tee -a `$f ; sleep 600; done"
 '''
 
 # WSL elasticsearch map count
@@ -33,6 +34,7 @@ tshark -T ek -J "http tcp udp ip" -x -r ./dump-1721489046.pcap | go run tshark-t
 '''
 
 # TODO
+ - tshark to elastic mover flag marker
  - .env memory limits
  - check http gzip
  - suricata disable signatures test
