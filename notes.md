@@ -27,7 +27,7 @@ tshark -T ek -J "http tcp udp ip" -x -r ./dump-1721489046.pcap | go run tshark-t
   "regexp": {
     "layers.tcp.tcp_tcp_payload_raw": {
       "case_insensitive": true,
-      "value": "[\u0000-\u001f]{32} .*0123456789:;\\<=\\>\\?@[\u0000-A]BCDEFGHIJK[LM]{2}NOPQRSTUVWXYZ.*"
+      "value": ".*ECSC(\\{[A-Za-z0-9_\\-\\.\\/\\\\]+\\}|_[A-Za-z0-9\\+\\/=]+).*"
     }
   }
 }

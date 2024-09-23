@@ -70,6 +70,7 @@ func sendBulkToElastic(host string, buf []byte) {
         req, err := http.NewRequest("POST", host, bytes.NewBuffer(buf))
 		if err != nil {
 			fmt.Println(err)
+			time.Sleep(time.Second) 
             continue
         } 
 		req.Header.Add("Content-Type", "application/json")
