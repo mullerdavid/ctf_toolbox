@@ -121,10 +121,14 @@ func read(r *bufio.Reader) ([]byte, error) {
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("Reads tshark output from stdin and transforms and sends to elasticsearch bulk endpoint.")
-		fmt.Println("Usage:", os.Args[0], "http://elasticsearch:9200/_bulk")
-		fmt.Println("Example: tshark -T ek -J \"http tcp udp ip\" -x -r ./dump.pcap |", os.Args[0], "http://localhost:9200/packets_template/_bulk")
+		fmt.Println("Usage:", os.Args[0], "http://elasticsearch:9200/_bulk [optional_filename.pcap]")
+		fmt.Println("Example: tshark -T ek -J \"http tcp udp ip\" -x -r ./dump.pcap |", os.Args[0], "http://localhost:9200/packets_template/_bulk ./dump.pcap")
 	} else {
 		elasticHost := os.Args[1]
+		filename := ""
+		if 2 <= len(os.Args) {
+			filename = os.Args[2]
+		}
 
 		reader := bufio.NewReader(os.Stdin)
 		counter := 0
@@ -156,6 +160,7 @@ func main() {
 			} 
 			node_layers, data := jsonmap["layers"].(JSONMap)
 			if data {
+				jsonmap["file"] = filename
 				// decoding some fields ending _raw and containing hex data to plaintext
 				// unreadable characters are encoded as \u00xx
 				node_udp, udp := node_layers["udp"].(JSONMap)
@@ -201,13 +206,13 @@ func main() {
 			writeBuf.WriteRune('\n')
 			if data && (batch < writeBuf.Len() ) {
 				sendBulkToElastic(elasticHost, writeBuf.Bytes() )
-				fmt.Println("Written", counter, "records overall,", writeBuf.Len(), "bytes this batch")
+				fmt.Println("Written", counter, "records overall,", writeBuf.Len(), "bytes this batch", filename)
 				writeBuf.Reset()
 			}
 		}
 		if 0 < writeBuf.Len() {
 			sendBulkToElastic(elasticHost, writeBuf.Bytes() )
-			fmt.Println("Written ", counter, "records overall,", writeBuf.Len(), "bytes this batch")
+			fmt.Println("Written ", counter, "records overall,", writeBuf.Len(), "bytes this batch", filename)
 		}
 	}
 }

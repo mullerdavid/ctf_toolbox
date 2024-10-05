@@ -9,6 +9,9 @@
                 "flag": {
                     "type": "boolean"
                 },
+                "file": {
+                    "type": "text"
+                },
                 "layers": {
                     "properties": {
                         "udp": {
