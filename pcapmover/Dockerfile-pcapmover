@@ -20,7 +20,7 @@ RUN apk update && \
 COPY --from=0 /app/tshark-to-elastic /
 COPY pcapmover.py tshark-mapping-to-elastic.jq /
 
-RUN /bin/sh -c "tshark -G elastic-mapping --elastic-mapping-filter http,tcp,udp,ip | jq -f /tshark-mapping-to-elastic.jq > /mapping.json"
+RUN /bin/sh -c "tshark -G elastic-mapping --elastic-mapping-filter http,tcp,udp,ip,ipv6 | jq -f /tshark-mapping-to-elastic.jq > /mapping.json"
 
 VOLUME ["/data"]
 

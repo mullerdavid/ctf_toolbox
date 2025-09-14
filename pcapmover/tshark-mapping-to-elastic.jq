@@ -10,7 +10,7 @@
                     "type": "boolean"
                 },
                 "file": {
-                    "type": "text"
+                    "type": "keyword"
                 },
                 "layers": {
                     "properties": {
